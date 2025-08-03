@@ -1,0 +1,62 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: wb_postgres
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - wb_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: wb_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - wb_network
+
+  nats-streaming:
+    image: nats-streaming:0.25.5-alpine
+    container_name: wb_nats_streaming
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    command: ["-m", "8222", "-cid", "wb_cluster"]
+    networks:
+      - wb_network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wb_app
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
+      - nats-streaming
+    profiles:
+      - test
+    networks:
+      - wb_network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  wb_network:
+    driver: bridge 
