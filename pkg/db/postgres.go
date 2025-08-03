@@ -43,3 +43,7 @@ func (p *PostgresClient) Close() {
 		p.pool.Close()
 	}
 }
+
+func (p *PostgresClient) Pool() *pgxpool.Pool {
+	return p.pool
+}

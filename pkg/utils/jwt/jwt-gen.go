@@ -99,8 +99,31 @@ func RefreshToken(tokenString string) (string, error) {
 		return "", err
 	}
 
-	// Generate new token with same user info but new expiration
-	return GenerateJWT(claims.UserID, claims.Username)
+	// Calculate new expiration: extend from original expiration time
+	var newExpiration time.Time
+	if claims.ExpiresAt != nil {
+		// Extend by 24 hours from the original expiration
+		newExpiration = claims.ExpiresAt.Time.Add(24 * time.Hour)
+	} else {
+		// Fallback: 24 hours from now
+		newExpiration = time.Now().Add(24 * time.Hour)
+	}
+
+	// Create new claims with extended expiration
+	newClaims := Claims{
+		UserID:   claims.UserID,
+		Username: claims.Username,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(newExpiration),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+			Issuer:    "wb-app",
+			Subject:   fmt.Sprintf("%d", claims.UserID),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, newClaims)
+	return token.SignedString(JWTSecret)
 }
 
 // ValidateToken validates token without parsing claims

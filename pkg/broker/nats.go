@@ -2,6 +2,7 @@ package broker
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -39,4 +40,55 @@ func (n *NATSClient) Close() {
 	if n.conn != nil {
 		n.conn.Close()
 	}
+}
+
+// PublishOrder publishes an order to the specified subject
+func (n *NATSClient) PublishOrder(subject string, order interface{}) error {
+	data, err := json.Marshal(order)
+	if err != nil {
+		return fmt.Errorf("failed to marshal order: %w", err)
+	}
+
+	err = n.conn.Publish(subject, data)
+	if err != nil {
+		return fmt.Errorf("failed to publish order: %w", err)
+	}
+
+	return nil
+}
+
+// SubscribeToOrders subscribes to orders on the specified subject
+func (n *NATSClient) SubscribeToOrders(subject string, handler func([]byte) error) (*nats.Subscription, error) {
+	sub, err := n.conn.Subscribe(subject, func(msg *nats.Msg) {
+		if err := handler(msg.Data); err != nil {
+			// Log error but don't ack the message to allow retry
+			fmt.Printf("Error processing message: %v\n", err)
+			return
+		}
+		// Acknowledge the message
+		msg.Ack()
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to subscribe: %w", err)
+	}
+
+	return sub, nil
+}
+
+// SubscribeToOrdersWithQueue subscribes to orders with queue group for load balancing
+func (n *NATSClient) SubscribeToOrdersWithQueue(subject, queueGroup string, handler func([]byte) error) (*nats.Subscription, error) {
+	sub, err := n.conn.QueueSubscribe(subject, queueGroup, func(msg *nats.Msg) {
+		if err := handler(msg.Data); err != nil {
+			// Log error but don't ack the message to allow retry
+			fmt.Printf("Error processing message: %v\n", err)
+			return
+		}
+		// Acknowledge the message
+		msg.Ack()
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to subscribe with queue: %w", err)
+	}
+
+	return sub, nil
 }

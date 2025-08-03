@@ -3,12 +3,18 @@ package main
 import (
 	"context"
 	"log/slog"
+	"os"
+	"os/signal"
+	"syscall"
+	ordercache "wb-test/internal/cache/order"
+	orderconsumer "wb-test/internal/consumers/order"
+	orderservice "wb-test/internal/service/order"
+	orderstorage "wb-test/internal/storage/order"
 	"wb-test/pkg/broker"
 	"wb-test/pkg/cache"
 	"wb-test/pkg/config"
 	"wb-test/pkg/db"
 	"wb-test/pkg/logger"
-	"wb-test/pkg/utils/jwt"
 )
 
 func main() {
@@ -54,49 +60,43 @@ func main() {
 	defer broker.Close()
 	log.Info("NATS connected successfully")
 
+	// Initialize order repo
+	orderRepo := orderstorage.NewOrderRepo(db)
+	log.Info("Order repo initialized successfully")
+
+	// Initialize order cache
+	orderCache := ordercache.NewOrderCache(cache)
+	log.Info("Order cache initialized successfully")
+
+	// Initialize order service
+	orderService := orderservice.NewOrderService(orderRepo, orderCache)
+	log.Info("Order service initialized successfully")
+
+	// Initialize and start order consumer
+	orderConsumer := orderconsumer.NewOrderConsumer(broker, orderService)
+	log.Info("Order consumer initialized successfully")
+
+	// Create context with cancellation for graceful shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Handle graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		sig := <-sigChan
+		log.Info("Received shutdown signal", "signal", sig)
+		cancel()
+	}()
+
+	// Start the consumer
+	log.Info("Starting order consumer...")
+	if err := orderConsumer.Start(ctx); err != nil {
+		log.Error("Consumer failed", "error", err)
+		panic(err)
+	}
+
 	log.Info("All services initialized successfully")
-
-	// JWT Token Generation and Validation Example
-	demonstrateJWTFlow(log)
-}
-
-// demonstrateJWTFlow shows token generation and validation
-func demonstrateJWTFlow(log *slog.Logger) {
-	log.Info("=== JWT Token Flow Demo ===")
-
-	// 1. Generate a JWT token
-	userID := 123
-	username := "john_doe"
-
-	token, err := jwt.GenerateJWT(userID, username)
-	if err != nil {
-		log.Error("Failed to generate JWT", "error", err)
-		return
-	}
-	log.Info("JWT Token generated", "user_id", userID, "username", username, "token", token[:20]+"...")
-
-	// 2. Validate the token
-	err = jwt.ValidateToken(token)
-	if err != nil {
-		log.Error("Token validation failed", "error", err)
-		return
-	}
-	log.Info("Token validation successful")
-
-	// 3. Parse the token
-	claims, err := jwt.ParseJWT(token)
-	if err != nil {
-		log.Error("Failed to parse JWT", "error", err)
-		return
-	}
-	log.Info("JWT Token validated", "user_id", claims.UserID, "username", claims.Username, "expires_at", claims.ExpiresAt)
-
-	// 4. Demonstrate error handling with invalid token
-	invalidToken := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalid.signature"
-	_, err = jwt.ParseJWT(invalidToken)
-	if err != nil {
-		log.Info("Invalid token correctly rejected", "error", err)
-	}
-
-	log.Info("=== JWT Demo Complete ===")
+	log.Info("All consumers initialized successfully")
 }
