@@ -14,7 +14,7 @@ run-producer:
 	go run $(PRODUCER_DIR)/main.go
 
 up: 
-	COMPOSE_PROJECT_NAME=garage docker compose -f docker-compose.yml --profile=test up -d --build 
+	COMPOSE_PROJECT_NAME=wb-test docker compose -f docker-compose.yml --env-file=.env-docker --profile=test up -d --build 
 
 # Start the infrastructure with Docker Compose
 up-dev: 

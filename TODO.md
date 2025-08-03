@@ -1,0 +1,6 @@
+- Backend server
+- Simple UI frontend
+- ci/cd deploy
+- dead letter queue
+- message validation
+- load testing

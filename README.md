@@ -21,22 +21,23 @@ REDIS_DB=0
 NATS_URL=nats://nats-streaming:4222
 
 # Logging
+```
 LOG_LEVEL=info
 ```
 
 ### Running with Docker Compose
 
-Start all services:
+## Start all services:
 ```bash
 make up
 ```
 
-Start only infrastructure (without app):
+## Start only infrastructure (without app):
 ```bash
 make up-dev
 ```
 
-Stop all services:
+## Stop all services:
 ```bash
 make down
 ```
