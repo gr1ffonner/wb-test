@@ -3,6 +3,8 @@ package handler
 import (
 	"net/http"
 
+	_ "wb-test/api"
+
 	"github.com/gorilla/mux"
 	httpSwagger "github.com/swaggo/http-swagger"
 )

@@ -1,10 +1,27 @@
 definitions:
-  internal_handlers_health.ErrorResponse:
+  wb-test_pkg_utils_http-utils.ErrorDetail:
     properties:
+      field:
+        type: string
       message:
         type: string
     type: object
-  internal_handlers_health.Status:
+  wb-test_pkg_utils_http-utils.ErrorResponse:
+    properties:
+      details:
+        items:
+          $ref: '#/definitions/wb-test_pkg_utils_http-utils.ErrorDetail'
+        type: array
+      log_timestamp:
+        type: string
+      message:
+        type: string
+      request_id:
+        type: string
+      status:
+        type: integer
+    type: object
+  wb-test_pkg_utils_http-utils.Status:
     properties:
       status:
         type: string
@@ -25,11 +42,11 @@ paths:
         "200":
           description: ok
           schema:
-            $ref: '#/definitions/internal_handlers_health.Status'
+            $ref: '#/definitions/wb-test_pkg_utils_http-utils.Status'
         "500":
           description: internal server error
           schema:
-            $ref: '#/definitions/internal_handlers_health.ErrorResponse'
+            $ref: '#/definitions/wb-test_pkg_utils_http-utils.ErrorResponse'
       summary: Health check
       tags:
       - Health

@@ -3,17 +3,8 @@ package health
 import (
 	"net/http"
 
-	jsoniter "github.com/json-iterator/go"
-	"github.com/pkg/errors"
+	httputils "wb-test/pkg/utils/http-utils"
 )
-
-type Status struct {
-	Status string `json:"status"`
-}
-
-type ErrorResponse struct {
-	Message string `json:"message"`
-}
 
 type Handler struct{}
 
@@ -27,18 +18,9 @@ func NewHandler() *Handler {
 //	@Tags		Health
 //	@Accept		json
 //	@Produce	json
-//	@Success	200	{object}	Status			"ok"
-//	@Failure	500	{object}	ErrorResponse	"internal server error"
+//	@Success	200	{object}	httputils.Status		"ok"
+//	@Failure	500	{object}	httputils.ErrorResponse	"internal server error"
 //	@Router		/live [get]
 func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
-	status := Status{"ok"}
-	v, err := jsoniter.Marshal(status)
-	if err != nil {
-		http.Error(w, errors.Wrap(err, "marshal status").Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(v)
+	httputils.WriteResponse(w, http.StatusOK, "ok", nil, nil)
 }

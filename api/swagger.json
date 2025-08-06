@@ -23,13 +23,13 @@
                     "200": {
                         "description": "ok",
                         "schema": {
-                            "$ref": "#/definitions/internal_handlers_health.Status"
+                            "$ref": "#/definitions/wb-test_pkg_utils_http-utils.Status"
                         }
                     },
                     "500": {
                         "description": "internal server error",
                         "schema": {
-                            "$ref": "#/definitions/internal_handlers_health.ErrorResponse"
+                            "$ref": "#/definitions/wb-test_pkg_utils_http-utils.ErrorResponse"
                         }
                     }
                 }
@@ -37,15 +37,41 @@
         }
     },
     "definitions": {
-        "internal_handlers_health.ErrorResponse": {
+        "wb-test_pkg_utils_http-utils.ErrorDetail": {
             "type": "object",
             "properties": {
+                "field": {
+                    "type": "string"
+                },
                 "message": {
                     "type": "string"
                 }
             }
         },
-        "internal_handlers_health.Status": {
+        "wb-test_pkg_utils_http-utils.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "details": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/wb-test_pkg_utils_http-utils.ErrorDetail"
+                    }
+                },
+                "log_timestamp": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "request_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
+        "wb-test_pkg_utils_http-utils.Status": {
             "type": "object",
             "properties": {
                 "status": {

@@ -25,6 +25,7 @@ import (
 //	@title			WB Test
 //	@version		1.0
 //	@description	Документация сервиса заказа
+
 func main() {
 	// Load config first
 	cfg, err := config.Load()
