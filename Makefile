@@ -58,3 +58,13 @@ migrate-status:
 migrate-create:
 	@read -p "Enter PostgreSQL migration name: " NAME; \
 	goose -dir $(MIGRATION_DIR_PG) create $$NAME sql
+
+check-swagger: 
+	@command -v which swag >/dev/null 2>&1 || { \
+		echo "swaggo not found, installing..."; \
+		go install github.com/swaggo/swag/cmd/swag@latest; \
+	}
+
+# Initialize Swagger documentation
+swagger-init: check-swagger 
+	swag fmt && swag init --pdl=1 -g cmd/app/main.go -o api/

@@ -1,0 +1,36 @@
+definitions:
+  internal_handlers_health.ErrorResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  internal_handlers_health.Status:
+    properties:
+      status:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Документация сервиса заказа
+  title: WB Test
+  version: "1.0"
+paths:
+  /live:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            $ref: '#/definitions/internal_handlers_health.Status'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/internal_handlers_health.ErrorResponse'
+      summary: Health check
+      tags:
+      - Health
+swagger: "2.0"

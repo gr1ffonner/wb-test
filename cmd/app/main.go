@@ -22,6 +22,9 @@ import (
 	"wb-test/pkg/logger"
 )
 
+//	@title			WB Test
+//	@version		1.0
+//	@description	Документация сервиса заказа
 func main() {
 	// Load config first
 	cfg, err := config.Load()
@@ -126,7 +129,6 @@ func main() {
 
 	log.Info("Shutting down servers...")
 
-	// Cancel context to stop consumer
 	cancel()
 	log.Info("Order consumer shutdown initiated")
 

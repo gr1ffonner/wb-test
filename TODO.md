@@ -1,4 +1,4 @@
-- Backend server
+- Backend server done
 - rewrite health handler
 - add http utils finilizer
 - Simple UI frontend
