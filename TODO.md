@@ -1,4 +1,6 @@
 - Backend server
+- rewrite health handler
+- add http utils finilizer
 - Simple UI frontend
 - ci/cd deploy
 - dead letter queue

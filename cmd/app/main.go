@@ -2,12 +2,17 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 	ordercache "wb-test/internal/cache/order"
 	orderconsumer "wb-test/internal/consumers/order"
+	handler "wb-test/internal/handlers"
 	orderservice "wb-test/internal/service/order"
 	orderstorage "wb-test/internal/storage/order"
 	"wb-test/pkg/broker"
@@ -29,9 +34,9 @@ func main() {
 	logger.InitLogger(cfg.Logger)
 	log := slog.Default()
 
-	ctx := context.Background()
+	slog.Info("Config and logger initialized")
 
-	log.Info("Starting application", "config", cfg)
+	ctx := context.Background()
 
 	// Initialize database
 	db, err := db.NewPostgres(ctx, cfg.Database.DSN)
@@ -80,23 +85,61 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Handle graceful shutdown
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	handlers := handler.NewHandler()
+	router := handler.InitRouter(handlers)
 
-	go func() {
-		sig := <-sigChan
-		log.Info("Received shutdown signal", "signal", sig)
-		cancel()
-	}()
-
-	// Start the consumer
-	log.Info("Starting order consumer...")
-	if err := orderConsumer.Start(ctx); err != nil {
-		log.Error("Consumer failed", "error", err)
-		panic(err)
+	httpServer := &http.Server{
+		Addr:    fmt.Sprintf(":%s", cfg.Server.Port),
+		Handler: router,
 	}
 
-	log.Info("All services initialized successfully")
-	log.Info("All consumers initialized successfully")
+	// Start the consumer in a goroutine
+	go func() {
+		if err := orderConsumer.Start(ctx); err != nil {
+			log.Error("Consumer failed", "error", err)
+			cancel()
+		}
+	}()
+
+	// Start HTTP server in a goroutine
+	go func() {
+		log.Info("Starting HTTP server", "port", cfg.Server.Port, "addr", httpServer.Addr)
+		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Error("HTTP server error", "error", err)
+			cancel()
+		} else if err != nil {
+			log.Info("HTTP server closed normally", "error", err)
+		}
+	}()
+
+	log.Info("All servers are ready to handle requests")
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+
+	select {
+	case sig := <-stop:
+		log.Info("Interrupt signal received", "signal", sig)
+	case <-ctx.Done():
+		log.Info("Context canceled")
+	}
+
+	log.Info("Shutting down servers...")
+
+	// Cancel context to stop consumer
+	cancel()
+	log.Info("Order consumer shutdown initiated")
+
+	// Create shutdown context with timeout for HTTP server
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
+
+	// Shutdown HTTP server gracefully
+	if err := httpServer.Shutdown(shutdownCtx); err != nil {
+		log.Error("HTTP server shutdown failed", "error", err)
+	} else {
+		log.Info("HTTP server stopped gracefully")
+	}
+
+	log.Info("Application shutdown complete")
 }

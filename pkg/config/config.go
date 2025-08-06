@@ -1,8 +1,6 @@
 package config
 
 import (
-	"log"
-
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
@@ -43,8 +41,6 @@ func Load() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	log.Println("Config loaded:", cfg)
 
 	return cfg, nil
 }
