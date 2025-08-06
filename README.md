@@ -10,20 +10,18 @@ A Go-based microservice application with PostgreSQL, Redis, and NATS messaging.
 
 
 # Server
-SERVER_PORT=8080
+* SERVER_PORT=8080
 
 # Redis
-REDIS_ADDR=redis:6379
-REDIS_PASSWORD=
-REDIS_DB=0
+* REDIS_ADDR=redis:6379
+* REDIS_PASSWORD=
+* REDIS_DB=0
 
 # NATS
-NATS_URL=nats://nats-streaming:4222
+* NATS_URL=nats://nats-streaming:4222
 
 # Logging
-```
-LOG_LEVEL=info
-```
+* LOG_LEVEL=info
 
 ### Running with Docker Compose
 
